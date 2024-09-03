@@ -1,0 +1,144 @@
+﻿@model EncriptionDecription.Models.EDDataModel
+<div class="row">
+    <div class="col-md-6">
+        <h2>Encryption / Decryption:</h2><br />
+        <form id="encryptionForm" asp-controller="Home" method="post" enctype="multipart/form-data">
+            <div class="mb-12">
+                <label for="encriptFileSelect" class="form-label">Choose File</label>
+                <input type="file" class="form-control" id="encriptFileSelect" name="file"  />
+            </div>
+            <div class="mb-12">
+                <label for="encriptPassword" class="form-label">Password</label>
+                <input class="form-control" type="password" id="encriptPassword" name="password" />
+            </div>
+            <div class="mb-12">
+                <label for="encriptTextArea" class="form-label">Encrypt Value</label>
+                <textarea id="encryptTextArea" class="form-control" name="encryptTextArea" rows="8" cols="80"></textarea>
+            </div>
+            <br />
+            <div class="text-center">
+                <button type="submit" class="btn btn-success" name="action" value="encrypt" data-mdb-ripple-init" id="encryptButton">
+                    <img src="~/loader.gif" alt="loader img" width="30px" id="loaderEncrypt" style="display: none;" />
+                    Encrypt
+                </button>
+                &nbsp;&nbsp;
+                <button type="submit" class="btn btn-warning" name="action" value="decrypt" data-mdb-ripple-init" id="decryptButton">
+                    <img src="~/loader.gif" alt="loader img" width="30px" id="loaderDecrypt" style="display: none;" />
+                    Decrypt
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <h2>Encrypt Result Value:</h2><br />
+        <br />
+        <textarea id="encriptTextAreaShow" class="form-control" name="encriptTextArea" rows="18" cols="180"></textarea>
+    </div>
+    <script>
+        document.getElementById('encryptionForm').addEventListener('submit', async function (e) {
+            const loaderEncrypt = document.getElementById('loaderEncrypt');
+            const loaderDecrypt = document.getElementById('loaderDecrypt');
+            const encryptButton = document.getElementById('encryptButton');
+            const decryptButton = document.getElementById('decryptButton');
+            const fileInput = document.getElementById('encriptFileSelect');
+            const textArea = document.getElementById('encryptTextArea');
+            const password = document.getElementById('encriptPassword');
+            const file = fileInput.files[0];
+            const text = textArea.value.trim();
+            const pass = password.value.trim();
+            if (pass === '') {
+                e.preventDefault(); // Prevent form submission
+                alert('Please enter password for encryption.');
+                return;
+            }
+            // Check if both file and textarea are empty
+            if (!file && text === '') {
+                e.preventDefault(); // Prevent form submission
+                alert('Please choose a file or enter text for encryption.');
+                return;
+            }
+            else {
+                e.preventDefault(); // Prevent the default form submission
+                var Url = "";
+                const formData = new FormData(this);
+                const action = document.activeElement.getAttribute('value');
+                switch (action) {
+                    case 'encrypt':
+                        Url = "/Home/EncryptString"; // Set the action for encryption
+                        encryptButton.disabled = true;
+                        loaderEncrypt.style.display = "inline-block";
+                        break;
+                    case 'decrypt':
+                        Url = "/Home/DecryptString"; // Set the action for decryption
+                        loaderDecrypt.style.display = "inline-block";
+                        decryptButton.disabled = true;
+                        break;
+                    default:
+                        // Set a default action or handle other cases
+                        break;
+                }
+                formData.append('action', action);
+
+                // Send a POST request to the server with form data
+                try {
+                    const response = await fetch(Url, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (action === 'encrypt') {
+                            // Display the encrypted text in the textarea
+                            document.getElementById('encriptTextAreaShow').value = data.encryptedTextArea;
+                            e.preventDefault(); // Prevent the default form submission
+
+                            // Get the action value from the clicked button
+                            const action = document.activeElement.getAttribute('value');
+                            this.action = "/Home/EncryptFile";
+                            this.submit();
+                            loaderEncrypt.style.display = "none";
+                            encryptButton.disabled = false;
+
+                        } else if (action === 'decrypt') {
+                            // Display the encrypted text in the textarea
+                            document.getElementById('encriptTextAreaShow').value = data.decryptedTextArea;
+                            e.preventDefault(); // Prevent the default form submission
+
+                            // Get the action value from the clicked button
+                            const action = document.activeElement.getAttribute('value');
+                            this.action = "/Home/DecryptFile";
+                            this.submit();
+                            decryptButton.disabled = false;
+                            loaderDecrypt.style.display = "none";
+                        }
+                    }
+                    else if (response.status==400) {
+
+                        encryptButton.disabled = false;
+                        decryptButton.disabled = false;
+                        loaderEncrypt.style.display = "none";
+                        loaderDecrypt.style.display = "none";
+                        alert('Server Error please try again.');
+                    }
+                    else {
+                        encryptButton.disabled = false;
+                        decryptButton.disabled = false;
+                        loaderEncrypt.style.display = "none";
+                        loaderDecrypt.style.display = "none";
+                        alert('Server Error please try again.');
+                    }
+                } catch (error) {
+
+                    encryptButton.disabled = false;
+                    decryptButton.disabled = false;
+                    loaderEncrypt.style.display = "none";
+                    loaderDecrypt.style.display = "none";
+                    alert('Server Error please try again.');
+
+                }
+            }
+        });
+
+    </script>
+</div>
